@@ -25,7 +25,7 @@ namespace LiguoIunivasaliDictionary
 						   where item.Vocab.Equals(input)
 						   select item;
 
-				Vocabulary word;
+				Vocabulary word; 
 
 				try
 				{
