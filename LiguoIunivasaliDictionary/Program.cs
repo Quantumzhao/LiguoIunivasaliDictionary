@@ -74,12 +74,57 @@ namespace LiguoIunivasaliDictionary
 						{
 							string[] tempItem = reader.ReadLine().Split('|');
 
+							Word tempWord = new Word();
+							tempWord.Morpheme.Add(new Snippet {Color = ConsoleColor.Green});
+
+							char[] tempCharArray = tempItem[0].ToCharArray();
+
+							for (int i = 0; i < tempCharArray.Length; i++)
+							{
+								switch (tempCharArray[i])
+								{
+									case '*':
+										tempWord.Morpheme.Add
+										(
+											new Snippet
+											{
+												Color = ConsoleColor.Blue
+											}
+										);
+										break;
+
+									case '\'':
+										tempWord.Morpheme.Add
+										(
+											new Snippet {
+												Color = i % 2 == 0 ? 
+												ConsoleColor.Green : ConsoleColor.DarkGreen
+											}
+										);										
+										break;
+
+									case '-':
+										tempWord.Morpheme.Add
+										(
+											new Snippet
+											{
+												Color = ConsoleColor.DarkCyan
+											}
+										);
+										break;
+
+									default:
+										tempWord.Morpheme[tempWord.Morpheme.Count - 1].Name.Append(tempCharArray[i]);
+										break;
+								}
+							}
+
 							dictionaryBuffer.Add
 							(
 								new Vocabulary
 								{
-									Vocab = tempItem[0],
-									Meaning = tempItem[1]
+									Vocab = tempWord,
+									Definition = tempItem[1]
 								}
 							);
 						}
@@ -129,7 +174,7 @@ namespace LiguoIunivasaliDictionary
 			{
 				word = list.Single();
 
-				Console.WriteLine($"{word.Meaning}\n");
+				Console.WriteLine($"{word.Definition}\n");
 			}
 			catch
 			{
@@ -149,9 +194,19 @@ namespace LiguoIunivasaliDictionary
 
 		static void PrintDictionary()
 		{
-			foreach (var item in dictionaryBuffer)
+			foreach (var vocabulary in dictionaryBuffer)
 			{
-				Console.WriteLine("{0, -20}{1}", item.Vocab, item.Meaning);
+				foreach (var item in vocabulary.Vocab.Morpheme)
+				{
+					Console.ForegroundColor = item.Color;
+					Console.Write(item.Name);
+				}
+
+				Console.ForegroundColor = ConsoleColor.Green;
+
+				Console.CursorLeft = 20;
+
+				Console.Write(vocabulary.Definition + "\n");
 			}
 
 			Console.WriteLine("\n\n");
@@ -160,8 +215,20 @@ namespace LiguoIunivasaliDictionary
 
 	class Vocabulary
 	{
-		public string Vocab { get; set; }
+		public Word Vocab { get; set; }
 
-		public string Meaning { get; set; }
+		public string Definition { get; set; }
+	}
+
+	class Word
+	{
+		public List<Snippet> Morpheme { get; set; } = new List<Snippet>();
+	}
+	
+	class Snippet
+	{
+		public StringBuilder Name { get; set; } = new StringBuilder();
+
+		public ConsoleColor Color { get; set; }
 	}
 }
