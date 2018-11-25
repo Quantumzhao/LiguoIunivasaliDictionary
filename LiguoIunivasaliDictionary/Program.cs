@@ -4,16 +4,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using System.Xml;
 
 namespace LiguoIunivasaliDictionary
 {
 	class Program
 	{
 		static List<Vocabulary> dictionaryBuffer = new List<Vocabulary>();
+		static XmlHelper XmlHelper { get; set; } = new XmlHelper("Dictionary.xml");
 
 		static void Main(string[] args)
 		{
 			Initiate();
+			XmlHelper.Parse();
 
 			while (true)
 			{
@@ -223,6 +226,10 @@ namespace LiguoIunivasaliDictionary
 	class Word
 	{
 		public List<Snippet> Morpheme { get; set; } = new List<Snippet>();
+
+		public List<string> Prefix { get; set; } = new List<string>();
+		public List<string> Root { get; set; } = new List<string>();
+		public List<string> Suffix { get; set; } = new List<string>();
 	}
 	
 	class Snippet
@@ -230,5 +237,43 @@ namespace LiguoIunivasaliDictionary
 		public StringBuilder Name { get; set; } = new StringBuilder();
 
 		public ConsoleColor Color { get; set; }
+	}
+
+	class XmlHelper
+	{
+		XmlDocument data = new XmlDocument();
+
+		public XmlHelper(string address)
+		{
+			ReadToMemory(address);
+		}
+
+		public void ReadToMemory(string address)
+		{
+			data.Load(address);
+		}
+
+		public List<Vocabulary> Parse()
+		{
+			XmlNode dictionary = data["dictionary"];
+
+			List<Vocabulary> vocabularies = new List<Vocabulary>();
+
+			foreach (XmlNode xmlVocabulary in dictionary)
+			{
+				XmlNode xmlWord = xmlVocabulary.SelectSingleNode("word");
+				Word word = new Word();
+
+				word.Prefix = xmlWord["prefix"].InnerText.Split().ToList();
+				word.Root = xmlWord["morpheme"].InnerText.Split().ToList();
+				word.Suffix = xmlWord["suffix"].InnerText.Split().ToList();
+
+				string definition = xmlVocabulary.SelectSingleNode("definition").InnerText;
+
+				vocabularies.Add(new Vocabulary() { Vocab = word, Definition = definition});
+			}
+
+			return vocabularies;
+		}
 	}
 }

@@ -1,0 +1,10 @@
+﻿<dictionary>
+	<vocabulary>
+		<word>
+			<prefix>a</prefix>
+			<morpheme>b</morpheme>
+			<suffix>c</suffix>
+		</word>
+		<definition>def</definition>
+	</vocabulary>
+</dictionary>
