@@ -1,10 +1,18 @@
 ﻿<dictionary>
 	<vocabulary>
 		<word>
-			<prefix>a</prefix>
-			<morpheme>b</morpheme>
-			<suffix>c</suffix>
+			<prefix>de</prefix>
+			<morpheme>oxy,ribo,nucle</morpheme>
+			<suffix>ic</suffix>
 		</word>
-		<definition>def</definition>
+		<definition>The adjective from of deoxyribonuclide, a giant organic polymer</definition>
 	</vocabulary>
+  <vocabulary>
+    <word>
+      <prefix></prefix>
+      <morpheme>acid</morpheme>
+      <suffix></suffix>
+    </word>
+    <definition>a sour substance, or a chemical which releases H+ ions when hydrated, in terms of proton-acid-base theory</definition>
+  </vocabulary>
 </dictionary>

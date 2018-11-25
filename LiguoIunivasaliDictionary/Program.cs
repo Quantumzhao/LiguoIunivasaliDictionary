@@ -11,7 +11,7 @@ namespace LiguoIunivasaliDictionary
 {
 	class Program
 	{
-		static List<Vocabulary> dictionaryBuffer = new List<Vocabulary>();
+		public static List<Vocabulary> dictionaryBuffer = new List<Vocabulary>();
 		static XmlHelper XmlHelper { get; set; } = new XmlHelper("Dictionary.xml");
 
 		static void Main(string[] args)
@@ -43,6 +43,7 @@ namespace LiguoIunivasaliDictionary
 						break;
 
 					case ConsoleKey.D3:
+						throw new NotImplementedException();
 						AddDef();
 						break;
 
@@ -182,7 +183,7 @@ namespace LiguoIunivasaliDictionary
 			string input = Console.ReadLine();
 
 			var list = from item in dictionaryBuffer
-					   where item.Vocab.Equals(input)
+					   where item.Vocab.CompleteWord.Equals(input)
 					   select item;
 
 			Vocabulary word;
@@ -201,7 +202,10 @@ namespace LiguoIunivasaliDictionary
 
 		static void FindWord()
 		{
-			Console.WriteLine("Function not implemented yet! \n");
+			Console.WriteLine("dont use this");
+			Console.WriteLine((from vocabulary in dictionaryBuffer
+							  where vocabulary.Vocab.CompleteWord == Console.ReadLine()
+							  select vocabulary).Single());
 		}
 
 		static void AddDef()
@@ -239,9 +243,68 @@ namespace LiguoIunivasaliDictionary
 
 	class Word
 	{
-		public List<string> Morpheme { get; set; } = new List<string>();
-		public List<string> Prefix { get; set; } = new List<string>();
-		public List<string> Suffix { get; set; } = new List<string>();
+		private List<string> morpheme = new List<string>();
+		public List<string> Morpheme
+		{
+			get => morpheme;
+
+			set
+			{
+				morpheme = value;
+
+				updateCompleteWord();
+			}
+		}
+
+		private List<string> prefix = new List<string>();
+		public List<string> Prefix
+		{
+			get => prefix;
+
+			set
+			{
+				prefix = value;
+
+				updateCompleteWord();
+			}
+		}
+
+		List<string> suffix = new List<string>();
+		public List<string> Suffix
+		{
+			get => suffix;
+
+			set
+			{
+				suffix = value;
+
+				updateCompleteWord();
+			}
+		}
+		
+		public string CompleteWord { get; private set; }
+
+		private void updateCompleteWord()
+		{
+			StringBuilder stringBuilder = new StringBuilder();
+
+			foreach (var item in Prefix)
+			{
+				stringBuilder.Append(new StringBuilder(item));
+			}
+
+			foreach (var item in morpheme)
+			{
+				stringBuilder.Append(new StringBuilder(item));
+			}
+
+			foreach (var item in Suffix)
+			{
+				stringBuilder.Append(new StringBuilder(item));
+			}
+
+			CompleteWord = stringBuilder.ToString();
+		}
 	}
 	
 	class Snippet
@@ -287,9 +350,9 @@ namespace LiguoIunivasaliDictionary
 				XmlNode xmlWord = xmlVocabulary.SelectSingleNode("word");
 				Word word = new Word();
 
-				word.Prefix = xmlWord["prefix"].InnerText.Split().ToList();
-				word.Morpheme = xmlWord["morpheme"].InnerText.Split().ToList();
-				word.Suffix = xmlWord["suffix"].InnerText.Split().ToList();
+				word.Prefix = xmlWord["prefix"].InnerText.Split(',').ToList();
+				word.Morpheme = xmlWord["morpheme"].InnerText.Split(',').ToList();
+				word.Suffix = xmlWord["suffix"].InnerText.Split(',').ToList();
 
 				string definition = xmlVocabulary.SelectSingleNode("definition").InnerText;
 
@@ -301,7 +364,9 @@ namespace LiguoIunivasaliDictionary
 
 		public void WriteToXml(Stream stream)
 		{
-			XmlWriter writer = XmlWriter.Create(stream);
+			//XmlWriter writer = XmlWriter.Create(stream);
+
+			
 		}
 	}
 
@@ -311,7 +376,7 @@ namespace LiguoIunivasaliDictionary
 
 		public static Stream GetStream()
 		{
-			return WebClient.OpenRead("https://quantumzhao.github.io/bulletins/test.txt");
+			return WebClient.OpenRead("https://quantumzhao.github.io/bulletins/Dictionary.xml");
 		}
 	}
 }
