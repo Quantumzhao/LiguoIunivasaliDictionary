@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using System.Xml;
+using System.Net;
 
 namespace LiguoIunivasaliDictionary
 {
@@ -15,7 +16,7 @@ namespace LiguoIunivasaliDictionary
 
 		static void Main(string[] args)
 		{
-			Initiate();
+			Initiate(false);
 			XmlHelper.Parse();
 
 			while (true)
@@ -46,7 +47,7 @@ namespace LiguoIunivasaliDictionary
 						break;
 
 					case ConsoleKey.D4:
-						PrintDictionary();
+						//PrintDictionary();
 						break;
 
 					case ConsoleKey.D5:
@@ -63,10 +64,22 @@ namespace LiguoIunivasaliDictionary
 			}
 		}
 
-		static void Initiate()
+		static void Initiate(bool isReadFromIni)
 		{
 			Console.ForegroundColor = ConsoleColor.Green;
 
+			if (isReadFromIni)
+			{
+				readFromIni();
+			}
+			else
+			{
+				dictionaryBuffer = XmlHelper.Parse();
+			}
+		}
+
+		static void readFromIni()
+		{/*
 			try
 			{
 				using (StreamReader reader = new StreamReader(@"C:\Users\yisha\OneDrive\Documents\LiguoIunivasaliDictionary.ini"))
@@ -78,7 +91,7 @@ namespace LiguoIunivasaliDictionary
 							string[] tempItem = reader.ReadLine().Split('|');
 
 							Word tempWord = new Word();
-							tempWord.Morpheme.Add(new Snippet {Color = ConsoleColor.Green});
+							tempWord.Morpheme.Add(new Snippet { Color = ConsoleColor.Green });
 
 							char[] tempCharArray = tempItem[0].ToCharArray();
 
@@ -99,11 +112,12 @@ namespace LiguoIunivasaliDictionary
 									case '\'':
 										tempWord.Morpheme.Add
 										(
-											new Snippet {
-												Color = i % 2 == 0 ? 
+											new Snippet
+											{
+												Color = i % 2 == 0 ?
 												ConsoleColor.Green : ConsoleColor.DarkGreen
 											}
-										);										
+										);
 										break;
 
 									case '-':
@@ -153,12 +167,12 @@ namespace LiguoIunivasaliDictionary
 				Console.WriteLine($"File dos not exist or moved. \n{ex.Message}");
 				Console.ForegroundColor = ConsoleColor.Green;
 			}
-			catch(Exception ex)
+			catch (Exception ex)
 			{
 				Console.ForegroundColor = ConsoleColor.Red;
 				Console.WriteLine($"Unknown Error. \n{ex.Message}");
 				Console.ForegroundColor = ConsoleColor.Green;
-			}
+			}*/
 		}
 
 		static void FindDef()
@@ -194,7 +208,7 @@ namespace LiguoIunivasaliDictionary
 		{
 			Console.WriteLine("Function not implemented yet! \n");
 		}
-
+		/*
 		static void PrintDictionary()
 		{
 			foreach (var vocabulary in dictionaryBuffer)
@@ -213,7 +227,7 @@ namespace LiguoIunivasaliDictionary
 			}
 
 			Console.WriteLine("\n\n");
-		}
+		}*/
 	}
 
 	class Vocabulary
@@ -225,10 +239,8 @@ namespace LiguoIunivasaliDictionary
 
 	class Word
 	{
-		public List<Snippet> Morpheme { get; set; } = new List<Snippet>();
-
+		public List<string> Morpheme { get; set; } = new List<string>();
 		public List<string> Prefix { get; set; } = new List<string>();
-		public List<string> Root { get; set; } = new List<string>();
 		public List<string> Suffix { get; set; } = new List<string>();
 	}
 	
@@ -241,16 +253,27 @@ namespace LiguoIunivasaliDictionary
 
 	class XmlHelper
 	{
-		XmlDocument data = new XmlDocument();
+		private string localAddress;
+
+		private XmlDocument data = new XmlDocument();
 
 		public XmlHelper(string address)
 		{
 			ReadToMemory(address);
+			localAddress = address;
+		}
+		public XmlHelper(Stream stream)
+		{
+			ReadToMemory(stream);
 		}
 
 		public void ReadToMemory(string address)
 		{
 			data.Load(address);
+		}
+		public void ReadToMemory(Stream stream)
+		{
+			data.Load(stream);
 		}
 
 		public List<Vocabulary> Parse()
@@ -265,7 +288,7 @@ namespace LiguoIunivasaliDictionary
 				Word word = new Word();
 
 				word.Prefix = xmlWord["prefix"].InnerText.Split().ToList();
-				word.Root = xmlWord["morpheme"].InnerText.Split().ToList();
+				word.Morpheme = xmlWord["morpheme"].InnerText.Split().ToList();
 				word.Suffix = xmlWord["suffix"].InnerText.Split().ToList();
 
 				string definition = xmlVocabulary.SelectSingleNode("definition").InnerText;
@@ -274,6 +297,21 @@ namespace LiguoIunivasaliDictionary
 			}
 
 			return vocabularies;
+		}
+
+		public void WriteToXml(Stream stream)
+		{
+			XmlWriter writer = XmlWriter.Create(stream);
+		}
+	}
+
+	class Web
+	{
+		public static WebClient WebClient { get; set; } = new WebClient();
+
+		public static Stream GetStream()
+		{
+			return WebClient.OpenRead("https://quantumzhao.github.io/bulletins/test.txt");
 		}
 	}
 }
