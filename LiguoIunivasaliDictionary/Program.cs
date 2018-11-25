@@ -12,7 +12,7 @@ namespace LiguoIunivasaliDictionary
 	class Program
 	{
 		public static List<Vocabulary> dictionaryBuffer = new List<Vocabulary>();
-		static XmlHelper XmlHelper { get; set; } = new XmlHelper("Dictionary.xml");
+		static XmlHelper XmlHelper { get; set; } = new XmlHelper(Web.GetStream());
 
 		static void Main(string[] args)
 		{
