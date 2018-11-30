@@ -1,18 +1,170 @@
 ﻿<dictionary>
-	<vocabulary>
-		<word>
-			<prefix>de</prefix>
+  <vocabulary tag = "Test">
+    <word>
+      <prefix>de</prefix>
 			<morpheme>oxy,ribo,nucle</morpheme>
 			<suffix>ic</suffix>
-		</word>
-		<definition>The adjective from of deoxyribonuclide, a giant organic polymer</definition>
+    </word>
+    <definition>the adjective from of deoxyribonuclide, a giant organic polymer</definition>
 	</vocabulary>
-  <vocabulary>
+  <vocabulary tag = "Test">
     <word>
       <prefix></prefix>
       <morpheme>acid</morpheme>
       <suffix></suffix>
     </word>
     <definition>a sour substance, or a chemical which releases H+ ions when hydrated, in terms of proton-acid-base theory</definition>
+  </vocabulary>
+  <vocabulary>
+    <word>
+      <prefix>na</prefix>
+      <morpheme>sho</morpheme>
+      <suffix></suffix>
+    </word>
+    <definition>negative</definition>
+  </vocabulary>
+  <vocabulary>
+    <word>
+      <prefix></prefix>
+      <morpheme>aru</morpheme>
+      <suffix></suffix>
+    </word>
+    <definition>all</definition>
+  </vocabulary>
+  <vocabulary>
+    <word>
+      <prefix></prefix>
+      <morpheme>ligo</morpheme>
+      <suffix></suffix>
+    </word>
+    <definition>speak, speaking</definition>
+  </vocabulary>
+   <vocabulary>
+    <word>
+      <prefix></prefix>
+      <morpheme>uni</morpheme>
+      <suffix></suffix>
+    </word>
+    <definition>common</definition>
+  </vocabulary>
+   <vocabulary>
+    <word>
+      <prefix></prefix>
+      <morpheme>sho</morpheme>
+      <suffix>su</suffix>
+    </word>
+    <definition>positive</definition>
+  </vocabulary>
+   <vocabulary>
+    <word>
+      <prefix></prefix>
+      <morpheme>lae</morpheme>
+      <suffix></suffix>
+    </word>
+    <definition>the, referring to something</definition>
+  </vocabulary>
+   <vocabulary>
+    <word>
+      <prefix></prefix>
+      <morpheme>to</morpheme>
+      <suffix></suffix>
+    </word>
+    <definition>and</definition>
+  </vocabulary>
+   <vocabulary>
+    <word>
+      <prefix></prefix>
+      <morpheme>zuku</morpheme>
+      <suffix></suffix>
+    </word>
+    <definition>be, belong to, possess</definition>
+  </vocabulary>
+   <vocabulary>
+    <word>
+      <prefix></prefix>
+      <morpheme>lae,li</morpheme>
+      <suffix></suffix>
+    </word>
+    <definition>you</definition>
+  </vocabulary>
+   <vocabulary>
+    <word>
+      <prefix></prefix>
+      <morpheme>kae,lae</morpheme>
+      <suffix></suffix>
+    </word>
+    <definition>this</definition>
+  </vocabulary>
+   <vocabulary>
+    <word>
+      <prefix></prefix>
+      <morpheme>so,lae</morpheme>
+      <suffix></suffix>
+    </word>
+    <definition>that</definition>
+  </vocabulary>
+   <vocabulary>
+    <word>
+      <prefix></prefix>
+      <morpheme>horo</morpheme>
+      <suffix></suffix>
+    </word>
+    <definition>or</definition>
+  </vocabulary>
+   <vocabulary>
+    <word>
+      <prefix></prefix>
+      <morpheme>lae,obo</morpheme>
+      <suffix></suffix>
+    </word>
+    <definition>the object that is referring to</definition>
+  </vocabulary>
+   <vocabulary>
+    <word>
+      <prefix></prefix>
+      <morpheme>shogu</morpheme>
+      <suffix></suffix>
+    </word>
+    <definition>above,on</definition>
+  </vocabulary>
+   <vocabulary>
+    <word>
+      <prefix></prefix>
+      <morpheme>ligu</morpheme>
+      <suffix></suffix>
+    </word>
+    <definition>ability</definition>
+  </vocabulary>
+   <vocabulary>
+    <word>
+      <prefix>na</prefix>
+      <morpheme></morpheme>
+      <suffix>su</suffix>
+    </word>
+    <definition>not, no</definition>
+  </vocabulary>
+   <vocabulary>
+    <word>
+      <prefix>na</prefix>
+      <morpheme>lo</morpheme>
+      <suffix></suffix>
+    </word>
+    <definition>but</definition>
+  </vocabulary>
+   <vocabulary>
+    <word>
+      <prefix></prefix>
+      <morpheme>la,li</morpheme>
+      <suffix></suffix>
+    </word>
+    <definition>me, I, myself</definition>
+  </vocabulary>
+   <vocabulary>
+    <word>
+      <prefix></prefix>
+      <morpheme>mati</morpheme>
+      <suffix></suffix>
+    </word>
+    <definition>multiple, several, plural form</definition>
   </vocabulary>
 </dictionary>

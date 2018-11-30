@@ -7,7 +7,7 @@ using System.IO;
 using System.Xml;
 using System.Net;
 
-namespace LiguoIunivasaliDictionary
+namespace LigouniDictionary
 {
 	class Program
 	{
@@ -16,15 +16,14 @@ namespace LiguoIunivasaliDictionary
 
 		static void Main(string[] args)
 		{
-			Initiate(false);
-			XmlHelper.Parse();
+			Initiate(false);			
 
 			while (true)
 			{
 				Console.WriteLine("Please Choose an Action: \n" +
-					"    [1]Find the Definition of a Word\n" +
-					"    [2]Find the Word in LigoUni\n" +
-					"    [3]Add a new Word to Dictionary\n" +
+					"    [1]Find the English Definition of a Word in Ligouni\n" +
+					"    [2]Find the Word in Ligouni\n" +
+					"    [3]Add a new vocabulary to Dictionary\n" +
 					"    [4]Print the dictionary on Screen\n" + 
 					"    [5]Exit\n");
 
@@ -35,20 +34,19 @@ namespace LiguoIunivasaliDictionary
 				switch (key)
 				{
 					case ConsoleKey.D1:
-						FindDef();
+						FindEngDef();
 						break;
 
 					case ConsoleKey.D2:
-						FindWord();
+						FindLigoUniWord();
 						break;
 
 					case ConsoleKey.D3:
-						throw new NotImplementedException();
-						AddDef();
+						EditVocab();
 						break;
 
 					case ConsoleKey.D4:
-						//PrintDictionary();
+						Print(dictionaryBuffer);
 						break;
 
 					case ConsoleKey.D5:
@@ -176,11 +174,12 @@ namespace LiguoIunivasaliDictionary
 			}*/
 		}
 
-		static void FindDef()
+		static void FindEngDef()
 		{
-			Console.WriteLine("Please Enter Your Querry");
+			Console.WriteLine("Please Enter Your Word in Ligouni");
 
 			string input = Console.ReadLine();
+			Console.WriteLine();
 
 			var list = from item in dictionaryBuffer
 					   where item.Vocab.CompleteWord.Equals(input)
@@ -200,38 +199,132 @@ namespace LiguoIunivasaliDictionary
 			}
 		}
 
-		static void FindWord()
+		static void FindLigoUniWord()
 		{
-			Console.WriteLine("dont use this");
-			Console.WriteLine((from vocabulary in dictionaryBuffer
-							  where vocabulary.Vocab.CompleteWord == Console.ReadLine()
-							  select vocabulary).Single());
-		}
+			Console.WriteLine("Please Enter Your English Word. \nWe are going to find the matched ligouni word");
 
-		static void AddDef()
-		{
-			Console.WriteLine("Function not implemented yet! \n");
-		}
-		/*
-		static void PrintDictionary()
-		{
-			foreach (var vocabulary in dictionaryBuffer)
+			string input = Console.ReadLine();
+
+			IEnumerable<Vocabulary> retrievedList =
+				from vocabulary in dictionaryBuffer
+				where vocabulary.Definition.Contains(input)
+				select vocabulary;
+
+			if (retrievedList.ToList().Count == 0)
 			{
-				foreach (var item in vocabulary.Vocab.Morpheme)
-				{
-					Console.ForegroundColor = item.Color;
-					Console.Write(item.Name);
-				}
+				Console.WriteLine("Sorry, we found nothing\n");
 
-				Console.ForegroundColor = ConsoleColor.Green;
-
-				Console.CursorLeft = 20;
-
-				Console.Write(vocabulary.Definition + "\n");
+				return;
 			}
 
-			Console.WriteLine("\n\n");
-		}*/
+			Print(retrievedList);
+		}
+
+		static void EditVocab()
+		{
+			Console.WriteLine("Function not implemented yet! \n");
+			Console.WriteLine("Are you sure to continue? \nYour input will make no effect. ");
+			Console.WriteLine("[Y/N]");
+
+			string key = Console.ReadKey().KeyChar.ToString().ToUpper();
+
+			if (!key.Equals("Y"))
+			{
+				return;
+			}
+
+			Console.WriteLine("\nPlease enter your new vocabulary in the following format: ");
+			Console.WriteLine("SPACE MATTERS! Please strictly follow the format!");
+			Console.WriteLine("[Prefix0] [Prefix1] [...],[Morpheme0] [Morpheme1] [...],[Suffix0] [Suffix1] [...];[Definition]");
+
+			string input = Console.ReadLine();
+
+			try
+			{
+				string[] semicolumnSeperated = input.Split(';');
+
+				string definition = semicolumnSeperated[1];
+
+				string[] commaSeperated = semicolumnSeperated[0].Split(',');
+
+				List<string> prefix = commaSeperated[0].Split(' ').ToList();
+				List<string> morpheme = commaSeperated[1].Split(' ').ToList();
+				List<string> suffix = commaSeperated[2].Split(' ').ToList();
+
+				dictionaryBuffer.Add(new Vocabulary()
+				{
+					Definition = definition,
+					Vocab = new Word()
+					{
+						Prefix = prefix,
+						Morpheme = morpheme,
+						Suffix = suffix
+					}
+				});
+			}
+			catch (Exception)
+			{
+
+				throw;
+			}
+		}
+
+		static void Print(IEnumerable<Vocabulary> List)
+		{
+			foreach (Vocabulary item in List)
+			{
+				List<string> prefix = item.Vocab.Prefix;
+				for (int i = 0; i < prefix.Count; i++)
+				{
+					if (i % 2 == 0)
+					{
+						Console.ForegroundColor = ConsoleColor.Blue;
+					}
+					else
+					{
+						Console.ForegroundColor = ConsoleColor.DarkBlue;
+					}
+
+					Console.Write(prefix[i]);
+				}
+
+				List<string> morpheme = item.Vocab.Morpheme;
+				for (int i = 0; i < morpheme.Count; i++)
+				{
+					if (i % 2 == 0)
+					{
+						Console.ForegroundColor = ConsoleColor.Gray;
+					}
+					else
+					{
+						Console.ForegroundColor = ConsoleColor.DarkGray;
+					}
+
+					Console.Write(morpheme[i]);
+				}
+
+				List<string> suffix = item.Vocab.Suffix;
+				for (int i = 0; i < suffix.Count; i++)
+				{
+					if (i % 2 == 0)
+					{
+						Console.ForegroundColor = ConsoleColor.Cyan;
+					}
+					else
+					{
+						Console.ForegroundColor = ConsoleColor.DarkCyan;
+					}
+
+					Console.Write(suffix[i]);
+				}
+
+				Console.CursorLeft = 20;
+				Console.ForegroundColor = ConsoleColor.Green;
+				Console.WriteLine(item.Definition);
+			}
+
+			Console.WriteLine();
+		}
 	}
 
 	class Vocabulary
@@ -318,7 +411,7 @@ namespace LiguoIunivasaliDictionary
 	{
 		private string localAddress;
 
-		private XmlDocument data = new XmlDocument();
+		public XmlDocument data { get; set; } = new XmlDocument();
 
 		public XmlHelper(string address)
 		{
@@ -367,6 +460,25 @@ namespace LiguoIunivasaliDictionary
 			//XmlWriter writer = XmlWriter.Create(stream);
 
 			
+		}
+
+		public void AddNode(Vocabulary newVocabulary)
+		{/*
+			XmlNode dictionary = tempData["dictionary"];
+
+			XmlElement newVocabulary = tempData.CreateElement("vocabulary");
+			XmlElement newWord = tempData.CreateElement("word");
+			XmlElement newDefinition = tempData.CreateElement("definition");
+			XmlElement newPrefix = tempData.CreateElement("prefix");
+			XmlElement newMorpheme = tempData.CreateElement("morpheme");
+			XmlElement newSuffix = tempData.CreateElement("suffix");
+
+			newPrefix.InnerText
+
+				dictionary.AppendChild
+				(
+
+				);*/
 		}
 	}
 
