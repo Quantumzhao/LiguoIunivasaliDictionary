@@ -325,6 +325,11 @@ namespace LigouniDictionary
 
 			Console.WriteLine();
 		}
+
+		static void Sort()
+		{
+			throw new NotImplementedException();
+		}
 	}
 
 	class Vocabulary
@@ -398,13 +403,6 @@ namespace LigouniDictionary
 
 			CompleteWord = stringBuilder.ToString();
 		}
-	}
-	
-	class Snippet
-	{
-		public StringBuilder Name { get; set; } = new StringBuilder();
-
-		public ConsoleColor Color { get; set; }
 	}
 
 	class XmlHelper
