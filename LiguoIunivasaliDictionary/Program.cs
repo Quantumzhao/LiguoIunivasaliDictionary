@@ -12,11 +12,11 @@ namespace LigouniDictionary
 	class Program
 	{
 		public static List<Vocabulary> dictionaryBuffer = new List<Vocabulary>();
-		static XmlHelper XmlHelper { get; set; } = new XmlHelper(Web.GetStream());
+		static XmlHelper XmlHelper { get; set; } = new XmlHelper(WebHelper.GetStream());
 
 		static void Main(string[] args)
 		{
-			Initiate(false);			
+			Initiate();			
 
 			while (true)
 			{
@@ -63,115 +63,11 @@ namespace LigouniDictionary
 			}
 		}
 
-		static void Initiate(bool isReadFromIni)
+		static void Initiate()
 		{
 			Console.ForegroundColor = ConsoleColor.Green;
 
-			if (isReadFromIni)
-			{
-				readFromIni();
-			}
-			else
-			{
-				dictionaryBuffer = XmlHelper.Parse();
-			}
-		}
-
-		static void readFromIni()
-		{/*
-			try
-			{
-				using (StreamReader reader = new StreamReader(@"C:\Users\yisha\OneDrive\Documents\LiguoIunivasaliDictionary.ini"))
-				{
-					while (!reader.EndOfStream)
-					{
-						try
-						{
-							string[] tempItem = reader.ReadLine().Split('|');
-
-							Word tempWord = new Word();
-							tempWord.Morpheme.Add(new Snippet { Color = ConsoleColor.Green });
-
-							char[] tempCharArray = tempItem[0].ToCharArray();
-
-							for (int i = 0; i < tempCharArray.Length; i++)
-							{
-								switch (tempCharArray[i])
-								{
-									case '*':
-										tempWord.Morpheme.Add
-										(
-											new Snippet
-											{
-												Color = ConsoleColor.Blue
-											}
-										);
-										break;
-
-									case '\'':
-										tempWord.Morpheme.Add
-										(
-											new Snippet
-											{
-												Color = i % 2 == 0 ?
-												ConsoleColor.Green : ConsoleColor.DarkGreen
-											}
-										);
-										break;
-
-									case '-':
-										tempWord.Morpheme.Add
-										(
-											new Snippet
-											{
-												Color = ConsoleColor.DarkCyan
-											}
-										);
-										break;
-
-									default:
-										tempWord.Morpheme[tempWord.Morpheme.Count - 1].Name.Append(tempCharArray[i]);
-										break;
-								}
-							}
-
-							dictionaryBuffer.Add
-							(
-								new Vocabulary
-								{
-									Vocab = tempWord,
-									Definition = tempItem[1]
-								}
-							);
-						}
-						catch (IndexOutOfRangeException)
-						{
-							Console.ForegroundColor = ConsoleColor.Yellow;
-							Console.WriteLine("There is something wrong when reading the dictionary...");
-							Console.ForegroundColor = ConsoleColor.Green;
-						}
-					}
-				}
-
-				if (dictionaryBuffer.Count == 0)
-				{
-					Console.ForegroundColor = ConsoleColor.Yellow;
-					Console.WriteLine("Warning: The Requesting Dictionary is empty. ");
-					Console.ForegroundColor = ConsoleColor.Green;
-				}
-			}
-			catch (IOException ex)
-			{
-				Console.ForegroundColor = ConsoleColor.Red;
-				Console.WriteLine($"File dos not exist or moved. \n{ex.Message}");
-				Console.ForegroundColor = ConsoleColor.Green;
-			}
-			catch (Exception ex)
-			{
-				Console.ForegroundColor = ConsoleColor.Red;
-				Console.WriteLine($"Unknown Error. \n{ex.Message}");
-				Console.ForegroundColor = ConsoleColor.Green;
-			}*/
+			dictionaryBuffer = XmlHelper.Parse();
 		}
 
 		static void FindEngDef()
@@ -480,7 +376,7 @@ namespace LigouniDictionary
 		}
 	}
 
-	class Web
+	class WebHelper
 	{
 		public static WebClient WebClient { get; set; } = new WebClient();
 
