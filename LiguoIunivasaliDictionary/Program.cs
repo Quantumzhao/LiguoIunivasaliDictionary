@@ -6,17 +6,18 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Xml;
 using System.Net;
+using System.Resources;
 
 namespace LigouniDictionary
 {
 	class Program
 	{
-		public static List<Vocabulary> dictionaryBuffer = new List<Vocabulary>();
-		static XmlHelper XmlHelper { get; set; } = new XmlHelper(WebHelper.GetStream());
+		public static List<Lexicon> dictionaryBuffer = new List<Lexicon>();
+		private static bool devMode = false;
 
 		static void Main(string[] args)
 		{
-			Initiate();			
+			Initiate();
 
 			while (true)
 			{
@@ -56,6 +57,21 @@ namespace LigouniDictionary
 						Environment.Exit(0);
 						break;
 
+					case ConsoleKey.D:
+						devMode = true;
+						goto default;
+
+					case ConsoleKey.M:
+						if (devMode)
+						{
+							DevModeEntry();
+						}
+						else
+						{
+							goto default;
+						}
+						break;
+
 					default:
 						Console.WriteLine("Invalid Input\n");
 						break;
@@ -66,8 +82,19 @@ namespace LigouniDictionary
 		static void Initiate()
 		{
 			Console.ForegroundColor = ConsoleColor.Green;
+			Console.WriteLine("Loading Resource...");
 
-			dictionaryBuffer = XmlHelper.Parse();
+			using (WebClient client = new WebClient())
+			{
+				using (Stream stream = client.OpenRead(
+					@"https://terpconnect.umd.edu/~yishanzh/Dictionary.xml"))
+				{
+					XmlHelper xmlHelper = new XmlHelper(stream);
+					dictionaryBuffer = xmlHelper.Parse();
+				}
+			}
+
+			Console.WriteLine("Complete");
 		}
 
 		static void FindEngDef()
@@ -81,7 +108,7 @@ namespace LigouniDictionary
 					   where item.Vocab.CompleteWord.Equals(input)
 					   select item;
 
-			Vocabulary word;
+			Lexicon word;
 
 			try
 			{
@@ -101,7 +128,7 @@ namespace LigouniDictionary
 
 			string input = Console.ReadLine();
 
-			IEnumerable<Vocabulary> retrievedList =
+			IEnumerable<Lexicon> retrievedList =
 				from vocabulary in dictionaryBuffer
 				where vocabulary.Definition.Contains(input)
 				select vocabulary;
@@ -147,27 +174,28 @@ namespace LigouniDictionary
 				List<string> morpheme = commaSeperated[1].Split(' ').ToList();
 				List<string> suffix = commaSeperated[2].Split(' ').ToList();
 
-				dictionaryBuffer.Add(new Vocabulary()
+				dictionaryBuffer.Add(new Lexicon()
 				{
 					Definition = definition,
 					Vocab = new Word()
 					{
 						Prefix = prefix,
-						Morpheme = morpheme,
+						Stem = morpheme,
 						Suffix = suffix
 					}
 				});
-			}
-			catch (Exception)
-			{
 
-				throw;
+				XmlHelper.WriteToXml(dictionaryBuffer);
+			}
+			catch
+			{
+				
 			}
 		}
 
-		static void Print(IEnumerable<Vocabulary> List)
+		static void Print(IEnumerable<Lexicon> List)
 		{
-			foreach (Vocabulary item in List)
+			foreach (Lexicon item in List)
 			{
 				List<string> prefix = item.Vocab.Prefix;
 				for (int i = 0; i < prefix.Count; i++)
@@ -184,7 +212,7 @@ namespace LigouniDictionary
 					Console.Write(prefix[i]);
 				}
 
-				List<string> morpheme = item.Vocab.Morpheme;
+				List<string> morpheme = item.Vocab.Stem;
 				for (int i = 0; i < morpheme.Count; i++)
 				{
 					if (i % 2 == 0)
@@ -226,9 +254,14 @@ namespace LigouniDictionary
 		{
 			throw new NotImplementedException();
 		}
+
+		static void DevModeEntry()
+		{
+			Console.WriteLine("Developer Mode Activated");
+		}
 	}
 
-	class Vocabulary
+	class Lexicon
 	{
 		public Word Vocab { get; set; }
 
@@ -237,14 +270,14 @@ namespace LigouniDictionary
 
 	class Word
 	{
-		private List<string> morpheme = new List<string>();
-		public List<string> Morpheme
+		private List<string> stem = new List<string>();
+		public List<string> Stem
 		{
-			get => morpheme;
+			get => stem;
 
 			set
 			{
-				morpheme = value;
+				stem = value;
 
 				updateCompleteWord();
 			}
@@ -287,7 +320,7 @@ namespace LigouniDictionary
 				stringBuilder.Append(new StringBuilder(item));
 			}
 
-			foreach (var item in morpheme)
+			foreach (var item in stem)
 			{
 				stringBuilder.Append(new StringBuilder(item));
 			}
@@ -303,34 +336,18 @@ namespace LigouniDictionary
 
 	class XmlHelper
 	{
-		private string localAddress;
-
 		public XmlDocument data { get; set; } = new XmlDocument();
 
-		public XmlHelper(string address)
-		{
-			ReadToMemory(address);
-			localAddress = address;
-		}
 		public XmlHelper(Stream stream)
-		{
-			ReadToMemory(stream);
-		}
-
-		public void ReadToMemory(string address)
-		{
-			data.Load(address);
-		}
-		public void ReadToMemory(Stream stream)
 		{
 			data.Load(stream);
 		}
 
-		public List<Vocabulary> Parse()
+		public List<Lexicon> Parse()
 		{
 			XmlNode dictionary = data["dictionary"];
 
-			List<Vocabulary> vocabularies = new List<Vocabulary>();
+			List<Lexicon> vocabularies = new List<Lexicon>();
 
 			foreach (XmlNode xmlVocabulary in dictionary)
 			{
@@ -338,25 +355,40 @@ namespace LigouniDictionary
 				Word word = new Word();
 
 				word.Prefix = xmlWord["prefix"].InnerText.Split(',').ToList();
-				word.Morpheme = xmlWord["morpheme"].InnerText.Split(',').ToList();
+				word.Stem = xmlWord["morpheme"].InnerText.Split(',').ToList();
 				word.Suffix = xmlWord["suffix"].InnerText.Split(',').ToList();
 
 				string definition = xmlVocabulary.SelectSingleNode("definition").InnerText;
 
-				vocabularies.Add(new Vocabulary() { Vocab = word, Definition = definition});
+				vocabularies.Add(new Lexicon() { Vocab = word, Definition = definition});
 			}
 
 			return vocabularies;
 		}
 
-		public void WriteToXml(Stream stream)
+		public static void WriteToXml(List<Lexicon> dictionary)
 		{
-			//XmlWriter writer = XmlWriter.Create(stream);
+			XmlDocument document = new XmlDocument();
 
-			
+			foreach (var lexicon in dictionary)
+			{
+				XmlElement newVocabulary = document.CreateElement("vocabulary");
+				XmlElement newWord = document.CreateElement("word");
+				XmlElement newDefinition = document.CreateElement("definition");
+				XmlElement newPrefix = document.CreateElement("prefix");
+				XmlElement newStem = document.CreateElement("morpheme");
+				XmlElement newSuffix = document.CreateElement("suffix");
+
+				newWord.AppendChild(newPrefix);
+				newWord.AppendChild(newStem);
+				newWord.AppendChild(newSuffix);
+
+				newVocabulary.AppendChild(newWord);
+				newVocabulary.AppendChild(newDefinition);
+			}
 		}
 
-		public void AddNode(Vocabulary newVocabulary)
+		public void AddNode(Lexicon newVocabulary)
 		{/*
 			XmlNode dictionary = tempData["dictionary"];
 
@@ -373,16 +405,6 @@ namespace LigouniDictionary
 				(
 
 				);*/
-		}
-	}
-
-	class WebHelper
-	{
-		public static WebClient WebClient { get; set; } = new WebClient();
-
-		public static Stream GetStream()
-		{
-			return WebClient.OpenRead("https://quantumzhao.github.io/bulletins/Dictionary.xml");
 		}
 	}
 }
