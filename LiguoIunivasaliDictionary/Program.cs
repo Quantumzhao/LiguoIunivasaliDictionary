@@ -14,6 +14,7 @@ namespace LigouniDictionary
 	{
 		public static List<Lexicon> dictionaryBuffer = new List<Lexicon>();
 		private static bool devMode = false;
+		private static Properties.Settings Settings = new Properties.Settings();
 
 		static void Main(string[] args)
 		{
@@ -26,7 +27,9 @@ namespace LigouniDictionary
 					"    [2]Find the Word in Ligouni\n" +
 					"    [3]Add a new vocabulary to Dictionary\n" +
 					"    [4]Print the dictionary on Screen\n" + 
-					"    [5]Exit\n");
+					"    [5]Open a local dictionary\n" +
+					"    [6]Edit Settings\n" + 
+					"    [X]Exit\n");
 
 				ConsoleKey key = Console.ReadKey().Key;
 
@@ -51,6 +54,14 @@ namespace LigouniDictionary
 						break;
 
 					case ConsoleKey.D5:
+						openADictionary();
+						break;
+
+					case ConsoleKey.D6:
+						editSettings();
+						break;
+
+					case ConsoleKey.X:
 					case ConsoleKey.Delete:
 					case ConsoleKey.Backspace:
 					case ConsoleKey.Escape:
@@ -145,17 +156,6 @@ namespace LigouniDictionary
 
 		static void EditVocab()
 		{
-			Console.WriteLine("Function not implemented yet! \n");
-			Console.WriteLine("Are you sure to continue? \nYour input will make no effect. ");
-			Console.WriteLine("[Y/N]");
-
-			string key = Console.ReadKey().KeyChar.ToString().ToUpper();
-
-			if (!key.Equals("Y"))
-			{
-				return;
-			}
-
 			Console.WriteLine("\nPlease enter your new vocabulary in the following format: ");
 			Console.WriteLine("SPACE MATTERS! Please strictly follow the format!");
 			Console.WriteLine("[Prefix0] [Prefix1] [...],[Morpheme0] [Morpheme1] [...],[Suffix0] [Suffix1] [...];[Definition]");
@@ -186,6 +186,11 @@ namespace LigouniDictionary
 				});
 
 				XmlHelper.WriteToXml(dictionaryBuffer);
+
+				if (!Settings.IsKeepTempFile)
+				{
+					File.Delete("temp.xml");
+				}
 			}
 			catch
 			{
@@ -250,6 +255,34 @@ namespace LigouniDictionary
 			Console.WriteLine();
 		}
 
+		private static void editSettings()
+		{
+			Console.WriteLine("[1]Keep Temporary File : {0}", Settings.IsKeepTempFile);
+			Console.WriteLine("Please enter the modification in the following format:");
+			Console.WriteLine("[No.],Value");
+			string[] input = Console.ReadLine().Split(',');
+			try
+			{
+				if (int.TryParse(input[0].Trim('[', ']'), out int res))
+				{
+					switch (res)
+					{
+						case 1:
+							Settings.IsKeepTempFile = bool.Parse(input[1]);
+							break;
+
+						default:
+							break;
+					}
+				}
+			}
+			catch (Exception)
+			{
+
+				throw;
+			}
+		}
+
 		static void Sort()
 		{
 			throw new NotImplementedException();
@@ -258,6 +291,22 @@ namespace LigouniDictionary
 		static void DevModeEntry()
 		{
 			Console.WriteLine("Developer Mode Activated");
+
+			Console.WriteLine("Please enter the SftpPlugin Directory");
+			string address = Console.ReadLine();
+			Settings.SftpClientAddress = address;
+		}
+
+		private static void openADictionary()
+		{
+			Console.WriteLine("Please enter the path of your local dictionary");
+			string address = Console.ReadLine();
+
+			using (StreamReader reader = new StreamReader(address))
+			{
+				XmlHelper helper = new XmlHelper(reader.BaseStream);
+				helper.Parse();
+			}
 		}
 	}
 
@@ -366,45 +415,80 @@ namespace LigouniDictionary
 			return vocabularies;
 		}
 
-		public static void WriteToXml(List<Lexicon> dictionary)
+		public static void WriteToXml(List<Lexicon> dictionary, string uri = "")
 		{
-			XmlDocument document = new XmlDocument();
-
-			foreach (var lexicon in dictionary)
+			using (FileStream fs = File.Create("temp.xml"))
 			{
-				XmlElement newVocabulary = document.CreateElement("vocabulary");
-				XmlElement newWord = document.CreateElement("word");
-				XmlElement newDefinition = document.CreateElement("definition");
-				XmlElement newPrefix = document.CreateElement("prefix");
-				XmlElement newStem = document.CreateElement("morpheme");
-				XmlElement newSuffix = document.CreateElement("suffix");
-
-				newWord.AppendChild(newPrefix);
-				newWord.AppendChild(newStem);
-				newWord.AppendChild(newSuffix);
-
-				newVocabulary.AppendChild(newWord);
-				newVocabulary.AppendChild(newDefinition);
+				using (XmlWriter writer = XmlWriter.Create(fs))
+				{
+					writer.WriteStartDocument();
+					writer.WriteStartElement("dictionary");
+					foreach (Lexicon lexicon in dictionary)
+					{
+						AddNode(
+							writer, 
+							"vocabulary", 
+							() => {
+								AddNode(
+									writer,
+									"word",
+									() => {
+										AddNode(
+											writer,
+											"prefix",
+											new Func<string>(() => {
+												return Concatenate(lexicon.Vocab.Prefix);
+											})()
+										);
+										AddNode(
+											writer,
+											"morpheme",
+											new Func<string>(() => {
+												return Concatenate(lexicon.Vocab.Stem);
+											})()
+										);
+										AddNode(
+											writer,
+											"suffix",
+											new Func<string>(() => {
+												return Concatenate(lexicon.Vocab.Suffix);
+											})()
+										);
+									}
+								);
+								AddNode(writer, "definition", lexicon.Definition);
+							}
+						);
+					}
+					writer.WriteEndElement();
+					writer.WriteEndDocument();
+				}
 			}
 		}
 
-		public void AddNode(Lexicon newVocabulary)
-		{/*
-			XmlNode dictionary = tempData["dictionary"];
+		private static void AddNode(XmlWriter writer, string name, Action addNode = null)
+		{
+			writer.WriteStartElement(name);
+			addNode?.Invoke();
+			writer.WriteEndElement();
+		}
+		private static void AddNode(XmlWriter writer, string name, string content)
+		{
+			writer.WriteStartElement(name);
+			writer.WriteString(content);
+			writer.WriteEndElement();
+		}
 
-			XmlElement newVocabulary = tempData.CreateElement("vocabulary");
-			XmlElement newWord = tempData.CreateElement("word");
-			XmlElement newDefinition = tempData.CreateElement("definition");
-			XmlElement newPrefix = tempData.CreateElement("prefix");
-			XmlElement newMorpheme = tempData.CreateElement("morpheme");
-			XmlElement newSuffix = tempData.CreateElement("suffix");
-
-			newPrefix.InnerText
-
-				dictionary.AppendChild
-				(
-
-				);*/
+		private static string Concatenate(List<string> list)
+		{
+			StringBuilder tempString = new StringBuilder();
+			foreach (var item in list)
+			{
+				tempString.Append(item);
+				tempString.Append(',');
+			}
+			tempString.Remove(tempString.Length - 1, 1);
+			return tempString.ToString();
 		}
 	}
 }
