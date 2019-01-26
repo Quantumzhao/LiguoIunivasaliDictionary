@@ -24,14 +24,14 @@ namespace LigouniDictionary
 			while (true)
 			{
 				Console.WriteLine("Please Choose an Action: \n" +
-					"    [1]Find the English Definition of a Word in Ligouni\n" +
-					"    [2]Find the Word in Ligouni\n" +
-					"    [3]Add a new vocabulary to Dictionary\n" +
-					"    [4]Print the dictionary on Screen\n" + 
-					"    [5]Open a local dictionary\n" +
-					"    [6]Edit Settings\n" + 
-					"    [7]Sort the dictionary\n" +
-					"    [X]Exit\n");
+					"    [1] Find the English Definition of a Word in Ligouni\n" +
+					"    [2] Find the Word in Ligouni\n" +
+					"    [3] Edit lexicon\n" +
+					"    [4] Print the dictionary on Screen\n" + 
+					"    [5] Open a local dictionary\n" +
+					"    [6] Edit Settings\n" + 
+					"    [7] Sort the dictionary\n" +
+					"    [X] Exit\n");
 
 				ConsoleKey key = Console.ReadKey().Key;
 
@@ -126,17 +126,10 @@ namespace LigouniDictionary
 			string input = Console.ReadLine();
 			Console.WriteLine();
 
-			var list = from item in dictionaryBuffer
-					   where item.Vocab.CompleteWord.Equals(input)
-					   select item;
-
-			Lexicon word;
-
 			try
 			{
-				word = list.Single();
-
-				Console.WriteLine($"{word.Definition}\n");
+				Console.WriteLine(
+					$"{dictionaryBuffer.Where(l => l.Vocab.CompleteWord == input).Single().Definition}\n");
 			}
 			catch
 			{
@@ -146,16 +139,15 @@ namespace LigouniDictionary
 
 		static void FindLigoUniWord()
 		{
-			Console.WriteLine("Please Enter Your English Word. \nWe are going to find the matched ligouni word");
+			Console.WriteLine(
+				"Please Enter Your English Word. \nWe are going to find the matched ligouni word");
 
 			string input = Console.ReadLine();
 
-			IEnumerable<Lexicon> retrievedList =
-				from vocabulary in dictionaryBuffer
-				where vocabulary.Definition.Contains(input)
-				select vocabulary;
+			List<Lexicon> retrievedList = 
+				dictionaryBuffer.Where(l => l.Definition.Contains(input)).ToList();
 
-			if (retrievedList.ToList().Count == 0)
+			if (retrievedList.Count == 0)
 			{
 				Console.WriteLine("Sorry, we found nothing\n");
 
@@ -167,34 +159,31 @@ namespace LigouniDictionary
 
 		static void EditVocab()
 		{
-			Console.WriteLine("\nPlease enter your new vocabulary in the following format: ");
-			Console.WriteLine("SPACE MATTERS! Please strictly follow the format!");
-			Console.WriteLine("[Prefix0] [Prefix1] [...],[Morpheme0] [Morpheme1] [...],[Suffix0] [Suffix1] [...];[Definition]");
-
-			string input = Console.ReadLine();
+			Console.WriteLine("Do you wish to: " +
+				"    [1]Add a vocabulary\n" +
+				"    [2]Update a vocabulary\n" +
+				"    [3]Delete a vocabulary\n");
 
 			try
 			{
-				string[] semicolumnSeperated = input.Split(';');
-
-				string definition = semicolumnSeperated[1];
-
-				string[] commaSeperated = semicolumnSeperated[0].Split(',');
-
-				List<string> prefix = commaSeperated[0].Split(' ').ToList();
-				List<string> morpheme = commaSeperated[1].Split(' ').ToList();
-				List<string> suffix = commaSeperated[2].Split(' ').ToList();
-
-				dictionaryBuffer.Add(new Lexicon()
+				switch (Console.ReadKey().Key)
 				{
-					Definition = definition,
-					Vocab = new Word()
-					{
-						Prefix = prefix,
-						Stem = morpheme,
-						Suffix = suffix
-					}
-				});
+					case ConsoleKey.D1:
+						AddVocab();
+						break;
+
+					case ConsoleKey.D2:
+						UpdateVocab();
+						break;
+
+					case ConsoleKey.D3:
+						DeleteVocab();
+						break;
+
+					default:
+						Console.WriteLine("Invalid Input");
+						return;
+				}
 
 				XmlHelper.WriteToXml(dictionaryBuffer);
 
@@ -211,12 +200,89 @@ namespace LigouniDictionary
 
 				updateDictionary();
 			}
-			catch(Exception e)
+			catch (Exception e)
 			{
 				Console.ForegroundColor = ConsoleColor.Red;
 				Console.WriteLine(e.Message);
 				Console.ForegroundColor = ConsoleColor.Green;
 			}
+		}
+		private static void AddVocab()
+		{
+			Console.WriteLine("\nPlease enter your new vocabulary in the following format: ");
+			Console.WriteLine("SPACE MATTERS! Please strictly follow the format!");
+			Console.WriteLine("[Prefix0] [Prefix1] [...],[Morpheme0] [Morpheme1] [...],[Suffix0] [Suffix1] [...];[Definition]");
+
+			string input = Console.ReadLine();
+
+			string[] semicolumnSeperated = input.Split(';');
+
+			string definition = semicolumnSeperated[1];
+
+			string[] commaSeperated = semicolumnSeperated[0].Split(',');
+
+			List<string> prefix = commaSeperated[0].Split(' ').ToList();
+			List<string> morpheme = commaSeperated[1].Split(' ').ToList();
+			List<string> suffix = commaSeperated[2].Split(' ').ToList();
+
+			dictionaryBuffer.Add(new Lexicon()
+			{
+				Definition = definition,
+				Vocab = new Word()
+				{
+					Prefix = prefix,
+					Stem = morpheme,
+					Suffix = suffix
+				}
+			});
+		}
+		private static void DeleteVocab()
+		{
+			Console.WriteLine("Please enter the the word in ligouni that you wish to delete");
+			string input = Console.ReadLine();
+
+			for (int i = 0; i < dictionaryBuffer.Count; i++)
+			{
+				if (dictionaryBuffer[i].Vocab.CompleteWord == input)
+				{
+					dictionaryBuffer.RemoveAt(i);
+					return;
+				}
+			}
+
+			Console.ForegroundColor = ConsoleColor.Red;
+			Console.WriteLine("Target not found");
+			Console.ForegroundColor = ConsoleColor.Green;
+		}
+		private static void UpdateVocab()
+		{
+			Console.WriteLine("Please enter the vocabulary that you wish to update");
+			string input = Console.ReadLine();
+
+			Lexicon lexicon = null;
+			for (int i = 0; i < dictionaryBuffer.Count; i++)
+				if (dictionaryBuffer[i].Vocab.CompleteWord == input)
+					lexicon = dictionaryBuffer[i];
+
+			if (lexicon == null)
+			{
+				Console.ForegroundColor = ConsoleColor.Red;
+				Console.WriteLine("Target not found");
+				Console.ForegroundColor = ConsoleColor.Green;
+				return;
+			}
+
+			Console.WriteLine("\nPlease enter your new vocabulary in the following format: ");
+			Console.WriteLine("SPACE MATTERS! Please strictly follow the format!");
+			Console.WriteLine("[Prefix0] [Prefix1] [...],[Morpheme0] [Morpheme1] [...],[Suffix0] [Suffix1] [...];[Definition]");
+			input = Console.ReadLine();
+			string[] semicolumnSeperated = input.Split(';');
+			string definition = semicolumnSeperated[1];
+			string[] commaSeperated = semicolumnSeperated[0].Split(',');
+
+			lexicon.Vocab.Prefix = commaSeperated[0].Split(' ').ToList();
+			lexicon.Vocab.Stem = commaSeperated[1].Split(' ').ToList();
+			lexicon.Vocab.Suffix = commaSeperated[2].Split(' ').ToList();
 		}
 
 		static void Print(IEnumerable<Lexicon> List)
@@ -226,14 +292,8 @@ namespace LigouniDictionary
 				List<string> prefix = item.Vocab.Prefix;
 				for (int i = 0; i < prefix.Count; i++)
 				{
-					if (i % 2 == 0)
-					{
-						Console.ForegroundColor = ConsoleColor.Blue;
-					}
-					else
-					{
-						Console.ForegroundColor = ConsoleColor.DarkBlue;
-					}
+					if (i % 2 == 0) Console.ForegroundColor = ConsoleColor.Blue;
+					else Console.ForegroundColor = ConsoleColor.DarkBlue;
 
 					Console.Write(prefix[i]);
 				}
@@ -241,14 +301,8 @@ namespace LigouniDictionary
 				List<string> morpheme = item.Vocab.Stem;
 				for (int i = 0; i < morpheme.Count; i++)
 				{
-					if (i % 2 == 0)
-					{
-						Console.ForegroundColor = ConsoleColor.Gray;
-					}
-					else
-					{
-						Console.ForegroundColor = ConsoleColor.DarkGray;
-					}
+					if (i % 2 == 0) Console.ForegroundColor = ConsoleColor.Gray;
+					else Console.ForegroundColor = ConsoleColor.DarkGray;
 
 					Console.Write(morpheme[i]);
 				}
@@ -256,14 +310,8 @@ namespace LigouniDictionary
 				List<string> suffix = item.Vocab.Suffix;
 				for (int i = 0; i < suffix.Count; i++)
 				{
-					if (i % 2 == 0)
-					{
-						Console.ForegroundColor = ConsoleColor.Cyan;
-					}
-					else
-					{
-						Console.ForegroundColor = ConsoleColor.DarkCyan;
-					}
+					if (i % 2 == 0) Console.ForegroundColor = ConsoleColor.Cyan;
+					else Console.ForegroundColor = ConsoleColor.DarkCyan;
 
 					Console.Write(suffix[i]);
 				}
@@ -294,9 +342,7 @@ namespace LigouniDictionary
 
 				string[] input = Console.ReadLine().Split(',').Select(s => s.Trim('[', ']')).ToArray();
 				if (int.TryParse(input[0], out int num))
-				{
 					config.SetProperty<JProperty>(config.ListProperties().ToArray()[num].Name, input[1]);
-				}
 			}
 		}
 
@@ -304,10 +350,7 @@ namespace LigouniDictionary
 		{
 			dictionaryBuffer = dictionaryBuffer.OrderBy(l => l.Vocab.CompleteWord).ToList();
 			XmlHelper.WriteToXml(dictionaryBuffer);
-			if (devMode)
-			{
-				SftpWrite();
-			}
+			if (devMode) SftpWrite();
 		}
 
 		static void DevModeEntry()
@@ -321,12 +364,10 @@ namespace LigouniDictionary
 			{
 				if (config.Has("SftpClientAddress"))
 				{
+					if (address == "") return;
 					config.SetProperty<string>("SftpClientAddress", address);
 				}
-				else
-				{
-					config.AddProperty("SftpClientAddress", address);
-				}
+				else config.AddProperty("SftpClientAddress", address);
 			}
 		}
 
@@ -345,11 +386,8 @@ namespace LigouniDictionary
 		private static void SftpWrite()
 		{
 			JsonHelper helper = new JsonHelper("config.json");
-			Assembly myassembly = Assembly.LoadFrom(helper.GetProperty("SftpClientAddress").Value<string>());
-			Type type = myassembly.GetType("SftpClient_for_LigouniDictionary.Interaction");
-			object instance = Activator.CreateInstance(type);
-			MethodInfo method = type.GetMethod("Write");
-			method.Invoke(instance, new object[] { File.ReadAllBytes("temp.xml")});
+			Type type = Assembly.LoadFrom(helper.GetProperty("SftpClientAddress").Value<string>()).GetType("SftpClient_for_LigouniDictionary.Interaction");
+			type.GetMethod("Write").Invoke(Activator.CreateInstance(type), new object[] { File.ReadAllBytes("temp.xml")});
 		}
 	}
 
@@ -370,7 +408,6 @@ namespace LigouniDictionary
 			set
 			{
 				stem = value;
-
 				updateCompleteWord();
 			}
 		}
@@ -383,7 +420,6 @@ namespace LigouniDictionary
 			set
 			{
 				prefix = value;
-
 				updateCompleteWord();
 			}
 		}
@@ -407,20 +443,9 @@ namespace LigouniDictionary
 		{
 			StringBuilder stringBuilder = new StringBuilder();
 
-			foreach (var item in Prefix)
-			{
-				stringBuilder.Append(new StringBuilder(item));
-			}
-
-			foreach (var item in stem)
-			{
-				stringBuilder.Append(new StringBuilder(item));
-			}
-
-			foreach (var item in Suffix)
-			{
-				stringBuilder.Append(new StringBuilder(item));
-			}
+			foreach (var item in Prefix) stringBuilder.Append(new StringBuilder(item));
+			foreach (var item in stem) stringBuilder.Append(new StringBuilder(item));
+			foreach (var item in Suffix) stringBuilder.Append(new StringBuilder(item));
 
 			CompleteWord = stringBuilder.ToString();
 		}
@@ -430,10 +455,7 @@ namespace LigouniDictionary
 	{
 		public XmlDocument data { get; set; } = new XmlDocument();
 
-		public XmlHelper(Stream stream)
-		{
-			data.Load(stream);
-		}
+		public XmlHelper(Stream stream) => data.Load(stream);
 
 		public List<Lexicon> Parse()
 		{
@@ -460,10 +482,7 @@ namespace LigouniDictionary
 
 		public static void WriteToXml(List<Lexicon> dictionary, string uri = "")
 		{
-			if (uri == "")
-			{
-				uri = "temp.xml";
-			}
+			if (uri == "") uri = "temp.xml";
 			using (FileStream fs = File.Create(uri))
 			{
 				using (XmlWriter writer = XmlWriter.Create(fs))
@@ -554,34 +573,16 @@ namespace LigouniDictionary
 			}
 		}
 
-		public void Dispose()
-		{
-			File.WriteAllText(filepath, jObject.ToString());
-		}
+		public void Dispose() => File.WriteAllText(filepath, jObject.ToString());
 
-		public JToken GetProperty(string name)
-		{
-			return jObject.Property(name).Value;
-		}
+		public JToken GetProperty(string name) => jObject.Property(name).Value;
 
-		public void SetProperty<T>(string name, JToken value)
-		{
-			jObject.Property(name).Value = value;
-		}
+		public void SetProperty<T>(string name, JToken value) => jObject.Property(name).Value = value;
 
-		public void AddProperty(string name, JToken value)
-		{
-			jObject.Add(name, value);
-		}
+		public void AddProperty(string name, JToken value) => jObject.Add(name, value);
 
-		public IEnumerable<JProperty> ListProperties()
-		{
-			return jObject.Properties();
-		}
+		public IEnumerable<JProperty> ListProperties() => jObject.Properties();
 
-		public bool Has(string propertyName)
-		{
-			return jObject.Properties().Where(p => p.Name == propertyName).Count() != 0;
-		}
+		public bool Has(string propertyName) => jObject.Properties().Where(p => p.Name == propertyName).Count() != 0;
 	}
 }
