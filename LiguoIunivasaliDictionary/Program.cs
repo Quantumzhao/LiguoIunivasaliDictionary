@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Xml;
 using System.Net;
-using System.Resources;
+using System.Reflection;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace LigouniDictionary
 {
@@ -14,7 +16,6 @@ namespace LigouniDictionary
 	{
 		public static List<Lexicon> dictionaryBuffer = new List<Lexicon>();
 		private static bool devMode = false;
-		private static Properties.Settings Settings = new Properties.Settings();
 
 		static void Main(string[] args)
 		{
@@ -29,6 +30,7 @@ namespace LigouniDictionary
 					"    [4]Print the dictionary on Screen\n" + 
 					"    [5]Open a local dictionary\n" +
 					"    [6]Edit Settings\n" + 
+					"    [7]Sort the dictionary\n" +
 					"    [X]Exit\n");
 
 				ConsoleKey key = Console.ReadKey().Key;
@@ -61,6 +63,10 @@ namespace LigouniDictionary
 						editSettings();
 						break;
 
+					case ConsoleKey.D7:
+						Sort();
+						break;
+
 					case ConsoleKey.X:
 					case ConsoleKey.Delete:
 					case ConsoleKey.Backspace:
@@ -69,7 +75,7 @@ namespace LigouniDictionary
 						break;
 
 					case ConsoleKey.D:
-						devMode = true;
+						devMode = !devMode;
 						goto default;
 
 					case ConsoleKey.M:
@@ -95,6 +101,13 @@ namespace LigouniDictionary
 			Console.ForegroundColor = ConsoleColor.Green;
 			Console.WriteLine("Loading Resource...");
 
+			updateDictionary();
+
+			Console.WriteLine("Complete");
+		}
+
+		private static void updateDictionary()
+		{
 			using (WebClient client = new WebClient())
 			{
 				using (Stream stream = client.OpenRead(
@@ -104,8 +117,6 @@ namespace LigouniDictionary
 					dictionaryBuffer = xmlHelper.Parse();
 				}
 			}
-
-			Console.WriteLine("Complete");
 		}
 
 		static void FindEngDef()
@@ -187,14 +198,24 @@ namespace LigouniDictionary
 
 				XmlHelper.WriteToXml(dictionaryBuffer);
 
-				if (!Settings.IsKeepTempFile)
+				if (devMode)
+				{
+					SftpWrite();
+				}
+
+				JsonHelper helper = new JsonHelper("config.json");
+				if (!helper.GetProperty("IsKeepTempFile").Value<bool>())
 				{
 					File.Delete("temp.xml");
 				}
+
+				updateDictionary();
 			}
-			catch
+			catch(Exception e)
 			{
-				
+				Console.ForegroundColor = ConsoleColor.Red;
+				Console.WriteLine(e.Message);
+				Console.ForegroundColor = ConsoleColor.Green;
 			}
 		}
 
@@ -257,35 +278,36 @@ namespace LigouniDictionary
 
 		private static void editSettings()
 		{
-			Console.WriteLine("[1]Keep Temporary File : {0}", Settings.IsKeepTempFile);
-			Console.WriteLine("Please enter the modification in the following format:");
-			Console.WriteLine("[No.],Value");
-			string[] input = Console.ReadLine().Split(',');
-			try
+			using (JsonHelper config = new JsonHelper("config.json"))
 			{
-				if (int.TryParse(input[0].Trim('[', ']'), out int res))
+				int count = 0;
+				foreach (var item in config.ListProperties())
 				{
-					switch (res)
-					{
-						case 1:
-							Settings.IsKeepTempFile = bool.Parse(input[1]);
-							break;
-
-						default:
-							break;
-					}
+					Console.WriteLine($"[{count}] {item.Name} {item.Value.ToString()}");
+					count++;
 				}
-			}
-			catch (Exception)
-			{
 
-				throw;
+				Console.WriteLine("Please enter the new value");
+				Console.ForegroundColor = ConsoleColor.Blue;
+				Console.WriteLine("Format: [No.],[Value]");
+				Console.ForegroundColor = ConsoleColor.Green;
+
+				string[] input = Console.ReadLine().Split(',').Select(s => s.Trim('[', ']')).ToArray();
+				if (int.TryParse(input[0], out int num))
+				{
+					config.SetProperty<JProperty>(config.ListProperties().ToArray()[num].Name, input[1]);
+				}
 			}
 		}
 
 		static void Sort()
 		{
-			throw new NotImplementedException();
+			dictionaryBuffer = dictionaryBuffer.OrderBy(l => l.Vocab.CompleteWord).ToList();
+			XmlHelper.WriteToXml(dictionaryBuffer);
+			if (devMode)
+			{
+				SftpWrite();
+			}
 		}
 
 		static void DevModeEntry()
@@ -294,7 +316,18 @@ namespace LigouniDictionary
 
 			Console.WriteLine("Please enter the SftpPlugin Directory");
 			string address = Console.ReadLine();
-			Settings.SftpClientAddress = address;
+
+			using (JsonHelper config = new JsonHelper("config.json"))
+			{
+				if (config.Has("SftpClientAddress"))
+				{
+					config.SetProperty<string>("SftpClientAddress", address);
+				}
+				else
+				{
+					config.AddProperty("SftpClientAddress", address);
+				}
+			}
 		}
 
 		private static void openADictionary()
@@ -307,6 +340,16 @@ namespace LigouniDictionary
 				XmlHelper helper = new XmlHelper(reader.BaseStream);
 				helper.Parse();
 			}
+		}
+
+		private static void SftpWrite()
+		{
+			JsonHelper helper = new JsonHelper("config.json");
+			Assembly myassembly = Assembly.LoadFrom(helper.GetProperty("SftpClientAddress").Value<string>());
+			Type type = myassembly.GetType("SftpClient_for_LigouniDictionary.Interaction");
+			object instance = Activator.CreateInstance(type);
+			MethodInfo method = type.GetMethod("Write");
+			method.Invoke(instance, new object[] { File.ReadAllBytes("temp.xml")});
 		}
 	}
 
@@ -417,7 +460,11 @@ namespace LigouniDictionary
 
 		public static void WriteToXml(List<Lexicon> dictionary, string uri = "")
 		{
-			using (FileStream fs = File.Create("temp.xml"))
+			if (uri == "")
+			{
+				uri = "temp.xml";
+			}
+			using (FileStream fs = File.Create(uri))
 			{
 				using (XmlWriter writer = XmlWriter.Create(fs))
 				{
@@ -489,6 +536,52 @@ namespace LigouniDictionary
 			}
 			tempString.Remove(tempString.Length - 1, 1);
 			return tempString.ToString();
+		}
+	}
+
+	class JsonHelper : IDisposable
+	{
+		string filepath;
+		JObject jObject;
+
+		public JsonHelper(string path)
+		{
+			filepath = path;
+			using (StreamReader reader = new StreamReader(filepath))
+			{
+				string json = reader.ReadToEnd();
+				jObject = JObject.Parse(json);
+			}
+		}
+
+		public void Dispose()
+		{
+			File.WriteAllText(filepath, jObject.ToString());
+		}
+
+		public JToken GetProperty(string name)
+		{
+			return jObject.Property(name).Value;
+		}
+
+		public void SetProperty<T>(string name, JToken value)
+		{
+			jObject.Property(name).Value = value;
+		}
+
+		public void AddProperty(string name, JToken value)
+		{
+			jObject.Add(name, value);
+		}
+
+		public IEnumerable<JProperty> ListProperties()
+		{
+			return jObject.Properties();
+		}
+
+		public bool Has(string propertyName)
+		{
+			return jObject.Properties().Where(p => p.Name == propertyName).Count() != 0;
 		}
 	}
 }
