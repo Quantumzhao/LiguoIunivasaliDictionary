@@ -89,6 +89,13 @@ namespace LigouniDictionary
 						}
 						break;
 
+					case ConsoleKey.V:
+						if (devMode)
+						{
+							massiveModificationMode();
+						}
+						break;
+
 					default:
 						Console.WriteLine("Invalid Input\n");
 						break;
@@ -159,14 +166,16 @@ namespace LigouniDictionary
 
 		static void EditVocab()
 		{
-			Console.WriteLine("Do you wish to: " +
+			Console.WriteLine("Do you wish to: \n" +
 				"    [1]Add a vocabulary\n" +
 				"    [2]Update a vocabulary\n" +
 				"    [3]Delete a vocabulary\n");
+			ConsoleKey key = Console.ReadKey().Key;
+			Console.WriteLine();
 
 			try
 			{
-				switch (Console.ReadKey().Key)
+				switch (key)
 				{
 					case ConsoleKey.D1:
 						AddVocab();
@@ -379,7 +388,7 @@ namespace LigouniDictionary
 			using (StreamReader reader = new StreamReader(address))
 			{
 				XmlHelper helper = new XmlHelper(reader.BaseStream);
-				helper.Parse();
+				dictionaryBuffer = helper.Parse();
 			}
 		}
 
@@ -388,6 +397,57 @@ namespace LigouniDictionary
 			JsonHelper helper = new JsonHelper("config.json");
 			Type type = Assembly.LoadFrom(helper.GetProperty("SftpClientAddress").Value<string>()).GetType("SftpClient_for_LigouniDictionary.Interaction");
 			type.GetMethod("Write").Invoke(Activator.CreateInstance(type), new object[] { File.ReadAllBytes("temp.xml")});
+		}
+
+		private static void massiveModificationMode()
+		{
+			Console.ForegroundColor = ConsoleColor.Blue;
+			string input = Console.ReadLine().ToLower();
+			Console.ForegroundColor = ConsoleColor.Green;
+			if (input != "startwrite") return;
+			Console.WriteLine("Massive Modification Mode Activatied");
+
+			while (true)
+			{
+				input = Console.ReadLine();
+				if (input == "endwrite") break;
+
+				try
+				{
+					string[] semicolumnSeperated = input.Split(';');
+					string definition = semicolumnSeperated[1];
+					string[] commaSeperated = semicolumnSeperated[0].Split(',');
+
+					List<string> prefix = commaSeperated[0].Split(' ').ToList();
+					List<string> morpheme = commaSeperated[1].Split(' ').ToList();
+					List<string> suffix = commaSeperated[2].Split(' ').ToList();
+
+					dictionaryBuffer.Add(new Lexicon()
+					{
+						Definition = definition,
+						Vocab = new Word()
+						{
+							Prefix = prefix,
+							Stem = morpheme,
+							Suffix = suffix
+						}
+					});
+				}
+				catch (Exception e)
+				{
+					Console.WriteLine(e.Message);
+				}
+			}
+
+			try
+			{
+				XmlHelper.WriteToXml(dictionaryBuffer);
+				SftpWrite();
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine(e.Message);
+			}
 		}
 	}
 
