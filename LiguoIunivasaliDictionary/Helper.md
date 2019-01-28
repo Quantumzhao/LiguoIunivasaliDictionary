@@ -11,4 +11,15 @@
 
 - ## Phonology
 
+  - This language uses only open syllable. 
+
+  - The phonemes include 6 vowels and 19 consonants. In other words, there are 120 unique valid syllables. 
+
+    - Consonants: `/p/`, `/b/`, `/h/`, `/f/`, `/v/`, `/s/`, `/z/`, `/θ/`, `/ts/`, `/t/`, `/d/`, `/ʧ/`, `/ʤ/`, `/k/`, `/g/`, `/ɹ/`, `/l/`, `/n/`, `/m/`
+    - Vowels: `/ɑ/`, `/æ/`, `/ɛ/`, `/i/`, `/o/`, `/u/`
+
+  - All aspirated consonants and unaspirated consonants are allophones. 
+
 - ## Notation
+
+  - Each character corresponds to exactly one character. 
