@@ -108,21 +108,41 @@ namespace LigouniDictionary
 			Console.ForegroundColor = ConsoleColor.Green;
 			Console.WriteLine("Loading Resource...");
 
-			updateDictionary();
+			try
+			{
+				updateDictionary();
+				Console.WriteLine("Complete");
+			}
+			catch (Exception e)
+			{
+				Console.ForegroundColor = ConsoleColor.Red;
+				if (e is WebException)
+					Console.WriteLine("Connection Failed");
+				Console.WriteLine(e.Message);
+				Console.ForegroundColor = ConsoleColor.Green;
 
-			Console.WriteLine("Complete");
+				Console.WriteLine("Trying to retrive local cache");
+				openADictionary();
+			}
 		}
 
 		private static void updateDictionary()
 		{
-			using (WebClient client = new WebClient())
+			try
 			{
-				using (Stream stream = client.OpenRead(
-					@"https://terpconnect.umd.edu/~yishanzh/Dictionary.xml"))
+				using (WebClient client = new WebClient())
 				{
-					XmlHelper xmlHelper = new XmlHelper(stream);
-					dictionaryBuffer = xmlHelper.Parse();
+					using (Stream stream = client.OpenRead(
+						@"https://terpconnect.umd.edu/~yishanzh/Dictionary.xml"))
+					{
+						XmlHelper xmlHelper = new XmlHelper(stream);
+						dictionaryBuffer = xmlHelper.Parse();
+					}
 				}
+			}
+			catch
+			{
+				throw;
 			}
 		}
 
@@ -292,6 +312,7 @@ namespace LigouniDictionary
 			lexicon.Vocab.Prefix = commaSeperated[0].Split(' ').ToList();
 			lexicon.Vocab.Stem = commaSeperated[1].Split(' ').ToList();
 			lexicon.Vocab.Suffix = commaSeperated[2].Split(' ').ToList();
+			lexicon.Definition = semicolumnSeperated[1];
 		}
 
 		static void Print(IEnumerable<Lexicon> List)
@@ -385,10 +406,26 @@ namespace LigouniDictionary
 			Console.WriteLine("Please enter the path of your local dictionary");
 			string address = Console.ReadLine();
 
-			using (StreamReader reader = new StreamReader(address))
+			while (true)
 			{
-				XmlHelper helper = new XmlHelper(reader.BaseStream);
-				dictionaryBuffer = helper.Parse();
+				try
+				{
+					using (StreamReader reader = new StreamReader(address))
+					{
+						XmlHelper helper = new XmlHelper(reader.BaseStream);
+						dictionaryBuffer = helper.Parse();
+					}
+
+					break;
+				}
+				catch (Exception e)
+				{
+					Console.ForegroundColor = ConsoleColor.Red;
+					Console.WriteLine(e.Message);
+					if (e is FileNotFoundException)
+						Console.WriteLine("File not found");
+					Console.ForegroundColor = ConsoleColor.Green;
+				}
 			}
 		}
 
